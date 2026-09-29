@@ -222,7 +222,9 @@ class Demo:
         o = self.get("/metrics/overview")
         say(f"\n  interventions/week: {[w['count'] for w in o['interventions_per_week']]}")
         say(f"  duplicate clean rows: {o['duplicate_clean_rows']}  ·  open alerts: {o['open_alerts']}")
-        say(f"  dashboard: {get_settings().public_web_url}  ·  chaos panel: {self.mock}")
+        # self.mock may be a compose-internal hostname; print the browser-facing URL
+        say(f"  dashboard: {get_settings().public_web_url}  ·  chaos panel: "
+            f"{os.getenv('PUBLIC_MOCK_URL', 'http://localhost:9000')}")
         return 0 if all(ok for _, ok, _ in self.results) else 1
 
 

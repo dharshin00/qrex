@@ -82,6 +82,10 @@ decision is made or a trap is discovered. Newest at the top of each section.
 
 ## Gotchas / watch-list
 
+- Ports 3000/8000/9000/1025 are shared by Compose and `scripts/dev.sh`; run
+  one or the other. `.env` differs per mode (service names vs 127.0.0.1) —
+  keep the dev copy as `.env.dev` and copy it over `.env` when switching.
+
 - `chaos/expire_session` without `token=` expires *every* session for the
   platform — including the live system's. Tests pass `token=` so they don't
   pause the running stack.
@@ -137,10 +141,8 @@ decision is made or a trap is discovered. Newest at the top of each section.
 
 ## Known gaps
 
-- Docker Compose path written but **not executed in the build environment**
-  (no Docker available there). Everything was verified with `scripts/dev.sh`
-  (same processes, user-space Postgres 18 + Redis 8). Run the demo-day
-  checklist on a Docker host before presenting.
+- `pytest` is not in the runtime image (only `requirements.txt`). Run tests
+  from a host venv against the Compose ports (see README → Tests).
 - Great Expectations (P1) not used; the lightweight checks in
   `api/app/services/validation.py` cover the PRD acceptance criteria.
 - Retry-exhaustion -> PULL_FAILED is covered by `tests/test_pipeline.py`, not
@@ -152,4 +154,9 @@ decision is made or a trap is discovered. Newest at the top of each section.
   from a cold reset; 12 pytest tests pass; dashboard verified in a headless
   browser incl. the OTP re-auth flow. P1 delivered: days-of-cover per SKU,
   7-day sales history chart, backfill progress indicator.
+- 2026-09-29 — Compose path verified: cold `docker compose up --build` → all
+  services healthy → `scripts/seed` → `scripts/demo` 6/6 PASS in-container;
+  Mailpit received SCHEMA_DRIFT, PARTIAL_PULL, SESSION_EXPIRED, STOCK_OUT,
+  LOW_STOCK emails; production web image checked in a headless browser incl.
+  the OTP re-auth flow. Fixed `dev.sh down` leaving `next-server` holding :3000.
 - 2026-09-29 — Docs moved under `docs/` (README also kept at repo root).

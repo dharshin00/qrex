@@ -23,9 +23,8 @@ Check boxes as you go. Map every task back to a PRD requirement (R#).
 - [x] `.env.example` with every var from `README.md` §Configuration.
 - [x] Health endpoints on `api` and `mock-platform`.
 - **Gate:** `docker compose up` starts all services; health checks green.
-  _Status: compose file + Dockerfiles written and statically checked; not yet
-  executed (no Docker in the build env). Same services verified via
-  `scripts/dev.sh`. See NOTE.md → Known gaps._
+  _Status (2026-09-29): verified — all 8 services healthy; `scripts/seed` +
+  `scripts/demo` pass all six scenarios inside Compose._
 
 ## Phase 1 — Data model & migrations  (R7)
 - [x] SQLAlchemy models for all tables in `ARCH.md` §5.

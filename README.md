@@ -88,7 +88,10 @@ scripts/dev.sh down
 ### Tests
 
 ```bash
-PYTHONPATH=. .venv/bin/pytest -q   # needs the stack up + seeded (integration tests)
+# needs the stack up + seeded (integration tests). Against Compose:
+DATABASE_URL=postgresql+psycopg://qrex:qrex@127.0.0.1:5432/qrex REDIS_URL=redis://127.0.0.1:6379/0 \
+MOCK_PLATFORM_URL=http://127.0.0.1:9000 .venv/bin/pytest -q
+# Against scripts/dev.sh: just `.venv/bin/pytest -q` with the dev .env in place.
 ```
 
 ## Running the demo

@@ -10,3 +10,4 @@ data/uploads/*
 !data/inbox/.gitkeep
 !data/uploads/.gitkeep
 .pytest_cache/
+.env.dev

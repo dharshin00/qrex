@@ -17,7 +17,8 @@ start() {  # name, command...
   if [[ -f $L/$name.pid ]] && kill -0 "$(cat "$L/$name.pid")" 2>/dev/null; then
     echo "  $name already running"; return
   fi
-  nohup "$@" >"$L/$name.log" 2>&1 &
+  # own session/process group, so `down` also stops grandchildren (npm -> next-server)
+  setsid nohup "$@" >"$L/$name.log" 2>&1 &
   echo $! >"$L/$name.pid"
   echo "  $name started (pid $!)"
 }
@@ -49,8 +50,7 @@ up() {
 down() {
   for f in "$L"/*.pid; do
     [[ -f $f ]] || continue
-    pkill -P "$(cat "$f")" 2>/dev/null || true
-    kill "$(cat "$f")" 2>/dev/null || true
+    kill -- -"$(cat "$f")" 2>/dev/null || kill "$(cat "$f")" 2>/dev/null || true
     rm -f "$f"
   done
   redis-cli -p 56379 shutdown nosave >/dev/null 2>&1 || true
