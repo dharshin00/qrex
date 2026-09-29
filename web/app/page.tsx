@@ -79,7 +79,7 @@ export default function SummaryPage() {
         <div className="mt-2.5 grid gap-2.5 lg:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-[520px]" />)}</div>
       ) : (
         <div className="mt-2.5 grid gap-2.5 lg:grid-cols-3 lg:grid-rows-[auto_auto]">
-          <Panel title="Revenue by store in the last 7 days" legend={<HeatLegend />}>
+          <Panel title="Revenue by store · 7d" legend={<HeatLegend />}>
             <StoreHeatmap rows={data.heatmap} days={data.days} />
           </Panel>
 
@@ -264,7 +264,8 @@ function BusiestStores({ rows }: { rows: Summary["heatmap"] }) {
     <div>
       <VBars height={120}
         items={stores.map((s) => ({
-          label: s.store_id, value: s.total, text: money(s.total), color: "var(--data)",
+          label: platformLabel(s.platform), dot: PLATFORM_VAR[s.platform], // city is on the badge below
+          value: s.total, text: money(s.total), color: "var(--data)",
           note: <span className="text-good">▲ {((s.total / all) * 100).toFixed(1)}%</span>,
         }))} />
       <div className="mt-3 flex justify-around gap-3">

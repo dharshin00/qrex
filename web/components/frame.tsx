@@ -42,50 +42,63 @@ export default function Frame({ children }: { children: ReactNode }) {
   const paused = data?.connectors.filter((c) => c.status === "paused").length ?? 0;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-bg">
-      <div className={`hero ${HERO[section] ?? "hero-summary"}`} />
-      <div className="relative z-[1] mx-auto max-w-[1600px] px-4 pb-12 pt-5 sm:px-8 lg:px-[60px]">
-          {/* top bar */}
-          <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
-            <div className="flex items-center gap-2 text-[13px] text-white/90" title={live ? "Live updates connected" : "Reconnecting to live updates"}>
-              <span className={`h-2 w-2 rounded-full ${healthy ? "bg-good" : "bg-warn"} ${live ? "pulse" : ""}`}
+    <div className="min-h-screen bg-bg">
+      {/* ---------------- sidebar (top bar on small screens) ---------------- */}
+      <aside className="sticky top-0 z-30 border-b border-white/5 bg-[#0c0c0e]/95 backdrop-blur lg:fixed lg:inset-y-0 lg:left-0 lg:w-[232px] lg:border-b-0 lg:border-r lg:bg-[#0c0c0e]">
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-4 lg:block lg:px-6 lg:pb-6 lg:pt-8">
+            <Link href="/" className="block">
+              <div className="text-[24px] font-bold leading-none tracking-[-0.02em] text-white">Q-REX</div>
+              <div className="mt-1.5 hidden text-[11px] text-faint lg:block">Quick-commerce reliability</div>
+            </Link>
+            <div className="flex items-center gap-2 text-[12px] text-white/80 lg:mt-6 lg:rounded-lg lg:bg-white/[0.04] lg:px-3 lg:py-2.5"
+              title={live ? "Live updates connected" : "Reconnecting to live updates"}>
+              <span className={`h-2 w-2 shrink-0 rounded-full ${healthy ? "bg-good" : "bg-warn"} ${live ? "pulse" : ""}`}
                 style={{ color: healthy ? "var(--good)" : "var(--warn)" }} />
-              <span className="truncate">
-                Data as of {lastSync ? new Date(lastSync).toLocaleString(undefined, { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "") : "—"}
+              <span className="leading-tight">
+                <span className="hidden text-[10.5px] text-faint lg:block">Data as of</span>
+                <span className="lg:hidden">As of </span>
+                {lastSync ? new Date(lastSync).toLocaleString(undefined, { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "") : "—"}
               </span>
             </div>
-            <div className="flex justify-center">
-              <nav className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-white/10 bg-black p-1.5 shadow-lg">
-                {TABS.map((t) => {
-                  const active = t.href === "/" ? path === "/" : path.startsWith(t.href);
-                  const badge = t.href === "/alerts" ? openAlerts : t.href === "/connectors" ? paused : 0;
-                  return (
-                    <Link key={t.href} href={t.href}
-                      className={`relative flex min-w-[64px] shrink-0 flex-col items-center gap-0.5 rounded-full px-3 py-1.5 transition ${
-                        active ? "bg-[#3a3a3f] text-accent" : "text-white hover:bg-white/10"}`}>
-                      <Icon name={t.icon} size={19} strokeWidth={2} />
-                      <span className="text-[10.5px] font-semibold leading-none">{t.label}</span>
-                      {badge > 0 && (
-                        <span className="absolute right-2 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-pink px-1 text-[9.5px] font-bold text-white">{badge}</span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-            <div className="hidden md:block" />{/* keeps the tab switcher centred */}
           </div>
 
-          {FILTERABLE.has(section) && <FilterButton />}
+          <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-3 lg:pb-0">
+            {TABS.map((t) => {
+              const active = t.href === "/" ? path === "/" : path.startsWith(t.href);
+              const badge = t.href === "/alerts" ? openAlerts : t.href === "/connectors" ? paused : 0;
+              return (
+                <Link key={t.href} href={t.href}
+                  className={`relative flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition ${
+                    active ? "bg-[#2c2c32] text-accent" : "text-white/80 hover:bg-white/[0.06] hover:text-white"}`}>
+                  {active && <span className="absolute inset-y-2 left-0 hidden w-[3px] rounded-full bg-accent lg:block" />}
+                  <Icon name={t.icon} size={18} strokeWidth={2} />
+                  <span className="flex-1">{t.label}</span>
+                  {badge > 0 && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pink px-1.5 text-[10.5px] font-bold text-white">{badge}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
 
-          <main className="mt-10 md:mt-14">{children}</main>
-
-          <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[12px] text-faint">
-            <span>Q-REX · all platform traffic goes to the local mock seller portal</span>
-            <a href={PAGE_MOCK_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:text-white">
+          <div className="mt-auto hidden border-t border-white/5 px-6 py-5 lg:block">
+            <a href={PAGE_MOCK_URL} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12.5px] text-mute hover:text-white">
               Chaos panel <Icon name="external" size={12} />
             </a>
-          </footer>
+            <p className="mt-2 text-[11px] leading-relaxed text-faint">All platform traffic goes to the local mock seller portal.</p>
+          </div>
+        </div>
+      </aside>
+
+      {/* ---------------- content ---------------- */}
+      <div className="relative overflow-x-hidden lg:pl-[232px]">
+        <div className={`hero ${HERO[section] ?? "hero-summary"}`} />
+        <div className="relative z-[1] mx-auto max-w-[1520px] px-4 pb-12 pt-8 sm:px-8 lg:px-[56px] lg:pt-12">
+          {FILTERABLE.has(section) && <FilterButton />}
+          <main>{children}</main>
+        </div>
       </div>
     </div>
   );
@@ -105,7 +118,7 @@ function FilterButton() {
     { v: "", label: "All platforms" }, { v: "blinkit", label: "Blinkit" }, { v: "instamart", label: "Swiggy Instamart" },
   ];
   return (
-    <div ref={ref} className="absolute right-4 top-[220px] z-20 sm:right-8 lg:right-[36px]">
+    <div ref={ref} className="absolute right-4 top-[190px] z-20 sm:right-8 lg:right-[56px] lg:top-[196px]">
       <button onClick={() => setOpen((o) => !o)} aria-label="Filter by platform" title="Filter by platform"
         className="relative grid h-[30px] w-[30px] place-items-center rounded-full bg-pink text-white shadow-lg transition hover:scale-105">
         <Icon name="filter" size={16} strokeWidth={2.4} />
