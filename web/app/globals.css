@@ -1,50 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --hover: #f0f2f5;
-  --line: #e3e6eb;
-  --ink: #15181e;
-  --mute: #667085;
-  --accent: #2563eb;
-  --good: #15803d;
-  --warn: #b45309;
-  --bad: #c42b1c;
-}
+/* Self-hosted fonts (no CDN dependency during a live demo) */
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+@import "@fontsource/poppins/800.css";
+@import "@fontsource/dm-mono/400.css";
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1116;
-    --card: #151a21;
-    --hover: #1c232c;
-    --line: #262e39;
-    --ink: #e7eaee;
-    --mute: #8b95a5;
-    --accent: #5b8def;
-    --good: #3fb56b;
-    --warn: #e0a030;
-    --bad: #ef6a5b;
-  }
+/* ===========================================================================
+   Q-REX dashboard tokens — "app window" style:
+   light backdrop → rounded black frame → gradient hero → grey data cards.
+   Indigo is the data colour, green the positive delta, pink the action accent.
+   =========================================================================== */
+:root {
+  --page: #000000;          /* full-bleed: page and frame are the same black */
+  --bg: #000000;            /* frame */
+  --surface: #333333;       /* cards */
+  --surface-2: #3d3d3d;
+  --hover: #414148;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --ink: #ffffff;
+  --mute: #c9c9cf;
+  --faint: #8f8f96;
+  --accent: #7c80f2;        /* highlighted data */
+  --data: #4b4c86;          /* default bars */
+  --data-soft: #8a8a90;     /* grey bars / low heat */
+  --on-accent: #ffffff;
+  --good: #20d39f;
+  --warn: #f4b64a;
+  --bad: #f25a78;
+  --pink: #f0506e;
+  --p-blinkit: #f5c84c;
+  --p-instamart: #ff8c52;
+  color-scheme: dark;
 }
 
 @theme inline {
+  --color-page: var(--page);
   --color-bg: var(--bg);
-  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-hover: var(--hover);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-mute: var(--mute);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-data: var(--data);
+  --color-on-accent: var(--on-accent);
   --color-good: var(--good);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-pink: var(--pink);
+  --font-display: "Poppins", ui-sans-serif, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
 }
 
-html, body {
-  background: var(--bg);
-  color: var(--ink);
+html, body { background: var(--page); color: var(--ink); }
+
+::selection { background: var(--accent); color: #fff; }
+
+.font-display { letter-spacing: -0.01em; }
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.kicker {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 table { font-variant-numeric: tabular-nums; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* gradient hero variants — fade to black ~420px down */
+.hero { position: absolute; inset: 0 0 auto 0; height: 440px; pointer-events: none; }
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0, 0, 0, 0.55) 62%, #000 100%);
+}
+.hero-summary { background: linear-gradient(100deg, #4b3a86 0%, #5c3a82 45%, #6a3470 100%); }
+.hero-orders { background: linear-gradient(100deg, #6a3595 0%, #85364f 50%, #9a4a22 100%); }
+.hero-ops { background: linear-gradient(100deg, #2e3a86 0%, #47388a 55%, #5d3478 100%); }
+.hero-alerts { background: linear-gradient(100deg, #6a3595 0%, #8f2f52 55%, #a33a2e 100%); }
+
+/* skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--hover) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }
+.pulse { animation: pulse-ring 1.8s ease-out infinite; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

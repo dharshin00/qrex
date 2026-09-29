@@ -36,7 +36,10 @@ from workers.connectors.base import (
 
 log = logging.getLogger(__name__)
 
-ORDERS_OVERLAP = timedelta(minutes=5)
+# Order status keeps changing for ~20 min after placement (placed -> in_transit
+# -> delivered). Re-pull at least that far back so late updates land; with a
+# shorter overlap orders froze at "in_transit" in the clean layer.
+ORDERS_OVERLAP = timedelta(minutes=25)
 FIRST_SYNC_LOOKBACK = timedelta(hours=24)
 RECOVERY_KINDS = ["PULL_FAILED", "SCHEMA_DRIFT", "PARTIAL_PULL", "STALE_SOURCE"]
 

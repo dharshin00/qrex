@@ -22,6 +22,19 @@ decision is made or a trap is discovered. Newest at the top of each section.
 
 ## Key decisions (with rationale)
 
+- **Orders overlap = 25 min, not 5** (2026-09-29). Order status keeps changing
+  for ~20 min after placement (placed → in_transit → delivered). With a 5-min
+  re-pull overlap, 908 orders froze at `placed`/`in_transit` in the clean layer.
+  The overlap must exceed the source's status horizon; guarded by
+  `tests/test_orders_overlap.py`. A 7-day backfill repaired existing rows.
+- **Dashboard = "app window" design** (2026-09-29), modelled on the Summary /
+  Details reference mockups: black rounded frame, per-page gradient hero, pill
+  tab switcher, Tableau-grey cards, indigo data colour, Poppins (self-hosted).
+  Summary = commerce KPIs; Orders = order-level table with delivery rings;
+  pipeline health + activity moved to Syncs. The pitch deck keeps its Mat look.
+- **`restart: unless-stopped` on every Compose service** (2026-09-29). A Docker
+  daemon restart left mock-platform/mailpit/web exited (code 255) with nothing to
+  bring them back, and every sync failed with ConnectError until noticed.
 - **Schedule = Redis NX key with TTL = interval** (2026-09-29). Beat runs one
   `dispatch_due` tick every 5s; it `SET qrex:sched:<conn>:<ds> NX EX <interval>`
   and enqueues only if the set succeeded. Intervals are read from

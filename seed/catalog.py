@@ -21,7 +21,7 @@ from functools import lru_cache
 PLATFORMS = ("blinkit", "instamart")
 DATASETS = ("orders", "inventory", "warehouse_stock", "sales")
 
-HISTORY_DAYS = 3          # how far back the mock can export orders
+HISTORY_DAYS = 8          # how far back the mock can export orders
 SALES_DAYS = 7            # daily sales rows exported
 LOW_STOCK_THRESHOLD = 15  # default per-warehouse threshold
 

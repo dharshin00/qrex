@@ -54,7 +54,11 @@ docker compose up --build     # brings up api, workers, beat, redis, db,
 
 Then:
 
-- Dashboard: http://localhost:3000
+- Dashboard: http://localhost:3000 — tabs: **Summary** (KPIs, store heatmap,
+  city map, top SKUs), **Orders** (order-level table with delivery progress),
+  SKUs, Stores, **Syncs** (pipeline health, activity, run history), Alerts,
+  **Sources** (sessions, consent ladder, schedules, re-auth). The pink filter
+  button scopes Summary/Orders to one platform.
 - API docs: http://localhost:8000/docs
 - Mock platform chaos panel: http://localhost:9000 (API docs at `/docs`)
 - Simulated seller phone (receives OTPs): http://localhost:9000/dev/phone

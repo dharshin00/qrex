@@ -1,6 +1,7 @@
 # Q-REX — full stack. `docker compose up --build`
 x-py: &py
   build: .
+  restart: unless-stopped
   env_file: .env
   volumes:
     - ./data:/code/data
@@ -10,6 +11,7 @@ x-py: &py
 
 services:
   db:
+    restart: unless-stopped
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: qrex
@@ -23,6 +25,7 @@ services:
       retries: 20
 
   redis:
+    restart: unless-stopped
     image: redis:7-alpine
     ports: ["6379:6379"]
     healthcheck:
@@ -31,10 +34,12 @@ services:
       retries: 20
 
   mailpit:  # SMTP capture for the email alert channel; UI at :8025
+    restart: unless-stopped
     image: axllent/mailpit:latest
     ports: ["8025:8025", "1025:1025"]
 
   mock-platform:
+    restart: unless-stopped
     build: .
     env_file: .env
     command: uvicorn mockp.main:app --host 0.0.0.0 --port 9000
@@ -66,6 +71,7 @@ services:
       api: { condition: service_healthy }
 
   web:
+    restart: unless-stopped
     build:
       context: ./web
       args:
