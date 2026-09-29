@@ -175,8 +175,8 @@ def warehouse_stock(platform: str, now: datetime) -> list[dict]:
     rows = []
     for store_id, city in stores(platform):
         for p in PRODUCTS:
-            base = _rng("stock", platform, store_id, p.canonical_sku).randint(35, 220)
-            drift = _rng("stockdrift", platform, store_id, p.canonical_sku, hour).randint(-20, 20)
+            base = _rng("stock", platform, store_id, p.canonical_sku).randint(250, 900)
+            drift = _rng("stockdrift", platform, store_id, p.canonical_sku, hour).randint(-40, 40)
             rows.append(dict(store_id=store_id, city=city,
                              sku=platform_sku(platform, p.canonical_sku),
                              units=max(base + drift, 20), as_of=now.replace(microsecond=0)))

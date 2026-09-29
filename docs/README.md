@@ -56,13 +56,39 @@ Then:
 
 - Dashboard: http://localhost:3000
 - API docs: http://localhost:8000/docs
-- Mock platform + chaos panel: http://localhost:9000/docs
+- Mock platform chaos panel: http://localhost:9000 (API docs at `/docs`)
+- Simulated seller phone (receives OTPs): http://localhost:9000/dev/phone
+- Alert emails (Mailpit): http://localhost:8025
 
 Seed demo data and run a first sync:
 
 ```bash
 docker compose exec api python -m scripts.seed        # deterministic demo data
 docker compose exec api python -m scripts.sync_now    # trigger all connectors
+```
+
+### Without Docker
+
+`scripts/dev.sh` runs the same services as local processes, using user-space
+PostgreSQL + Redis under `./.local` (no root needed):
+
+```bash
+uv venv .venv --python 3.13 && uv pip install --python .venv/bin/python -r requirements-dev.txt
+(cd web && npm install)
+cp .env.example .env   # then point DATABASE_URL/REDIS_URL/MOCK_PLATFORM_URL at
+                       # 127.0.0.1:55432 / 127.0.0.1:56379 / http://127.0.0.1:9000,
+                       # ALERT_EMAIL_HOST=127.0.0.1 and INBOX_DIR/UPLOAD_DIR at ./data
+scripts/dev.sh up      # postgres, redis, smtp sink, mock, api, worker, beat, web
+export PYTHONPATH=$PWD:$PWD/api
+.venv/bin/python -m scripts.seed
+.venv/bin/python -m scripts.demo
+scripts/dev.sh down
+```
+
+### Tests
+
+```bash
+PYTHONPATH=. .venv/bin/pytest -q   # needs the stack up + seeded (integration tests)
 ```
 
 ## Running the demo
@@ -83,7 +109,17 @@ The demo script (or the chaos panel at :9000) steps through:
 6. **Stock alerts** — drop a SKU below threshold → `LOW_STOCK` / `STOCK_OUT`.
 
 Watch the **interventions-per-week** chart fall once re-auth automation is in
-play — that's the headline metric.
+play — that's the headline metric. (Weeks before the current one come from a
+seeded baseline representing the manual workflow; the dashboard labels it.)
+
+In the demo script the "seller" reading the OTP is played by
+`scripts/_seller.py`, which reads the mock's simulated phone. To do it by hand,
+open the dashboard's **Connectors → Re-authenticate**, click *Send OTP*, read
+the code at `/dev/phone`, and type it in.
+
+Useful flags: `--gap-seconds N` (how long the session stays expired in
+scenario 5), `--only 2,5` (run selected scenarios). Reset between runs with
+`python -m scripts.reset --yes && python -m scripts.seed`.
 
 ## Configuration
 
@@ -105,13 +141,14 @@ editable from the dashboard.
 
 ```
 qrex/
-  docs/            IDEATION · ARCH · PRD · README · TASK · NOTE
+  docs/            IDEATION · ARCH · PRD · README · TASK · NOTE (README also at root)
   api/             FastAPI app (routers, models, schemas, services, db)
   workers/         Celery app, tasks, beat schedule, connectors/
   mock-platform/   FastAPI mock seller portal + chaos panel
   web/             Next.js dashboard
   seed/            deterministic demo data
-  scripts/         seed · sync_now · demo · reset · backfill
+  scripts/         seed · sync_now · demo · reset · backfill · dev.sh
+  tests/           connector, validation and pipeline tests
   docker-compose.yml
   .env.example
 ```
