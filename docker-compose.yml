@@ -1,0 +1,78 @@
+# Q-REX — full stack. `docker compose up --build`
+x-py: &py
+  build: .
+  env_file: .env
+  volumes:
+    - ./data:/code/data
+  depends_on:
+    db: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: qrex
+      POSTGRES_PASSWORD: qrex
+      POSTGRES_DB: qrex
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qrex"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 20
+
+  mailpit:  # SMTP capture for the email alert channel; UI at :8025
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+  mock-platform:
+    build: .
+    env_file: .env
+    command: uvicorn mockp.main:app --host 0.0.0.0 --port 9000
+    ports: ["9000:9000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 5s
+      retries: 20
+
+  api:
+    <<: *py
+    command: sh -c "cd api && alembic upgrade head && cd .. && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      retries: 30
+
+  worker:
+    <<: *py
+    command: celery -A workers.celery_app worker -l info -c 4
+    depends_on:
+      api: { condition: service_healthy }   # api runs migrations
+
+  beat:
+    <<: *py
+    command: celery -A workers.celery_app beat -l info -s /tmp/celerybeat-schedule
+    depends_on:
+      api: { condition: service_healthy }
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports: ["3000:3000"]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:

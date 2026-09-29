@@ -1,0 +1,12 @@
+.venv/
+.local/
+__pycache__/
+*.pyc
+.env
+node_modules/
+web/.next/
+data/inbox/*
+data/uploads/*
+!data/inbox/.gitkeep
+!data/uploads/.gitkeep
+.pytest_cache/
