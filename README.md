@@ -43,6 +43,9 @@ imitates a seller portal. Full detail in `docs/ARCH.md`.
 
 ## Quick start
 
+> Full guide — servers/cloud VMs, configuration, operations, backups, offline
+> installs, troubleshooting: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
+
 Prereqs: Docker + Docker Compose.
 
 ```bash
@@ -179,3 +182,4 @@ step (`docs/PRD.md` §P2) that reuses the same connector interface.
 - `docs/PRD.md` — scoped requirements with acceptance criteria.
 - `docs/TASK.md` — phased build plan for Claude Code CLI.
 - `docs/NOTE.md` — running decisions, gotchas, and the do-not-do list.
+- `docs/DEPLOYMENT.md` — run and reproduce Q-REX anywhere (local, server, offline).

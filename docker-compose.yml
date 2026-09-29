@@ -18,7 +18,7 @@ services:
       POSTGRES_PASSWORD: qrex
       POSTGRES_DB: qrex
     volumes: [pgdata:/var/lib/postgresql/data]
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]   # host-local only (tests / psql); never public
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U qrex"]
       interval: 3s
@@ -27,7 +27,7 @@ services:
   redis:
     restart: unless-stopped
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: ["127.0.0.1:6379:6379"]   # host-local only
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
@@ -36,7 +36,7 @@ services:
   mailpit:  # SMTP capture for the email alert channel; UI at :8025
     restart: unless-stopped
     image: axllent/mailpit:latest
-    ports: ["8025:8025", "1025:1025"]
+    ports: ["8025:8025", "127.0.0.1:1025:1025"]   # inbox UI public, SMTP host-local
 
   mock-platform:
     restart: unless-stopped
@@ -75,7 +75,10 @@ services:
     build:
       context: ./web
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        # Baked into the browser bundle at build time: must be reachable from the
+        # viewer's browser. Set PUBLIC_API_URL / PUBLIC_MOCK_URL in .env, then rebuild web.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_MOCK_URL: ${PUBLIC_MOCK_URL:-http://localhost:9000}
     ports: ["3000:3000"]
     depends_on:
       api: { condition: service_healthy }
