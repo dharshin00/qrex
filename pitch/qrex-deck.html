@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-REX — PS-9 · Palm Era</title>
+
+<!-- === FONTS ===
+     Mat type stack: Bricolage Grotesque (display), DM Sans (body), DM Mono (labels). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   THEME TOKENS (Mat design system)
+   Colours are the Mat palette; sizes are the Mat vw/vh scale
+   translated to the fixed 1920×1080 stage (1vw = 19.2px, 1vh = 10.8px).
+   Change colours here to re-theme the whole deck.
+   =========================================== */
+:root {
+  --bg-dark: #232E26;
+  --bg-dark-alt: #2E3D30;
+  --bg-cream: #EDE6D0;
+  --bg-cream-alt: #E4DAC4;
+  --ink-cream: #F0E8D2;
+  --ink-cream-2: rgba(240, 232, 210, 0.62);
+  --ink-cream-3: rgba(240, 232, 210, 0.3);
+  --ink-dark: #1E2820;
+  --ink-dark-2: rgba(30, 40, 32, 0.66);
+  --ink-dark-3: rgba(30, 40, 32, 0.3);
+  --accent: #C07030;
+  --border-dark: rgba(240, 232, 210, 0.12);
+  --border-cream: rgba(30, 40, 32, 0.14);
+
+  --f-display: 'Bricolage Grotesque', sans-serif;
+  --f-body: 'DM Sans', sans-serif;
+  --f-mono: 'DM Mono', monospace;
+
+  /* type scale @1920 stage (speaker-led: labels/body nudged up for projection + PDF) */
+  --t-display: 230px;
+  --t-h1: 134px;
+  --t-h2: 84px;
+  --t-h3: 44px;
+  --t-lead: 32px;
+  --t-body: 24px;
+  --t-caption: 18px;
+  --t-label: 16px;
+  --t-stat: 128px;
+  --t-quote: 66px;
+
+  /* spacing @1920 stage */
+  --pad-x: 106px;
+  --pad-y: 60px;
+  --gap-lg: 48px;
+  --gap-md: 30px;
+  --gap-sm: 15px;
+
+  --stage-bg: #151c17;
+  --slide-bg: var(--bg-dark);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE — viewport-base.css (mandatory, verbatim)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+    .deck-controls {
+        display: none !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE SURFACES
+   Dark forest green is the default; every dark slide carries the
+   bottom-right wood-brown glow via ::before (Mat's only depth cue).
+   .light is the single cream tonal-break slide.
+   =========================================== */
+.slide {
+  background: var(--bg-dark);
+  color: var(--ink-cream);
+  font-family: var(--f-body);
+}
+.slide.dark::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 55%;
+  height: 70%;
+  background: radial-gradient(ellipse at 70% 80%, rgba(122, 78, 36, 0.28) 0%, rgba(80, 50, 20, 0.14) 40%, transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+.slide.light {
+  background: var(--bg-cream);
+  color: var(--ink-dark);
+}
+.frame {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: var(--pad-y) var(--pad-x);
+  display: flex;
+  flex-direction: column;
+}
+
+/* === CHROME + FOOT BANDS (mono label pairs over/under a 1px hairline) === */
+.chrome, .foot {
+  display: flex;
+  justify-content: space-between;
+  font: 400 var(--t-label)/1 var(--f-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-cream-3);
+}
+.chrome { padding-bottom: var(--gap-sm); border-bottom: 1px solid var(--border-dark); }
+.foot { padding-top: var(--gap-sm); border-top: 1px solid var(--border-dark); margin-top: auto; }
+.light .chrome, .light .foot { color: var(--ink-dark-3); border-color: var(--border-cream); }
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+/* === TYPE === */
+.kicker {
+  font: 400 var(--t-label)/1 var(--f-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.kicker::after { content: ""; width: 32px; height: 1px; background: var(--accent); }
+.kicker + .h2 { margin-top: 28px; }
+.display {
+  font: 800 var(--t-display)/0.88 var(--f-display);
+  letter-spacing: -0.03em;
+}
+.h1 { font: 800 var(--t-h1)/0.92 var(--f-display); letter-spacing: -0.025em; }
+.h2 { font: 700 var(--t-h2)/1.0 var(--f-display); letter-spacing: -0.02em; }
+.h3 { font: 600 var(--t-h3)/1.1 var(--f-display); letter-spacing: -0.01em; }
+.lead { font: 400 var(--t-lead)/1.5 var(--f-body); color: var(--ink-cream-2); }
+.light .lead { color: var(--ink-dark-2); }
+.caption { font: 400 var(--t-caption)/1.5 var(--f-body); color: var(--ink-cream-3); }
+.mono { font-family: var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; }
+em { font-style: normal; color: var(--accent); }
+
+/* === EM-DASH LIST (orange DM Mono marker, never a dot) === */
+.dash { list-style: none; display: grid; gap: 18px; }
+.dash li {
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+  font: 400 var(--t-lead)/1.4 var(--f-body);
+  color: var(--ink-cream);
+}
+.dash li::before { content: "—"; font-family: var(--f-mono); color: var(--accent); }
+.dash.small li { font-size: 27px; }
+
+/* === INFO-CARD (cream paper inset on green; no border, no shadow, no radius) === */
+.info-card {
+  background: var(--bg-cream);
+  color: var(--ink-dark);
+  padding: 42px 48px;
+}
+.info-card .h3 { font-size: 38px; margin-bottom: 16px; }
+.info-card p { font: 400 25px/1.55 var(--f-body); color: var(--ink-dark-2); }
+.info-card .kicker { margin-bottom: 20px; }
+
+/* ===========================================
+   REVEAL ANIMATION
+   Mat navigation is instant; content eases up once per slide.
+   Delay via --d so ordering is explicit, not nth-child dependent.
+   =========================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+
+/* ===========================================
+   SLIDE 1 — COVER
+   =========================================== */
+.cover .frame { justify-content: space-between; }
+.cover .display { margin-top: 26px; }
+.cover .tag {
+  margin-top: 72px;
+  max-width: 1180px;
+  font: 600 52px/1.14 var(--f-display);
+  letter-spacing: -0.015em;
+}
+.cover .tag span { color: var(--ink-cream-2); }
+.cover-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid var(--border-dark);
+  padding-top: var(--gap-sm);
+}
+
+/* ===========================================
+   SLIDE 2 — PROBLEM
+   =========================================== */
+.problem { display: grid; grid-template-columns: 1fr 640px; gap: 110px; align-items: center; }
+.problem .h2 { margin: 28px 0 34px; }
+.problem .lead { margin-bottom: 30px; }
+
+/* ===========================================
+   SLIDE 3 — LADDER (cream tonal break)
+   =========================================== */
+.ladder {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border-cream);
+  margin-top: 64px;
+}
+.rung { padding: 34px 40px 0 0; border-right: 1px solid var(--border-cream); margin-right: 40px; }
+.rung:last-child { border-right: 0; margin-right: 0; }
+.rung .n { font: 800 88px/1 var(--f-display); letter-spacing: -0.03em; color: var(--ink-dark-3); }
+.rung.first .n { color: var(--accent); }
+.rung .h3 { font-size: 38px; margin: 22px 0 12px; }
+.rung p { font: 400 23px/1.5 var(--f-body); color: var(--ink-dark-2); }
+.principles { display: flex; gap: 64px; margin-top: 70px; }
+.principles div {
+  font: 500 26px/1.35 var(--f-body);
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+}
+.principles div::before { content: "—"; font-family: var(--f-mono); color: var(--accent); }
+
+/* ===========================================
+   SLIDE 4 — PIPELINE (7 stages across a hairline grid)
+   =========================================== */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 70px;
+  border-top: 1px solid var(--border-dark);
+}
+.stage { padding: 30px 26px 0 0; border-right: 1px solid var(--border-dark); margin-right: 26px; }
+.stage:last-child { border-right: 0; margin-right: 0; }
+.stage .n { font: 400 var(--t-label)/1 var(--f-mono); letter-spacing: 0.12em; color: var(--accent); }
+.stage .h3 { font-size: 34px; margin: 18px 0 14px; }
+.stage p { font: 400 21px/1.5 var(--f-body); color: var(--ink-cream-2); }
+.stack { margin-top: 64px; }
+
+/* ===========================================
+   SLIDE 5 — FAULT → OUTCOME (compare rows)
+   =========================================== */
+.faults { margin-top: 44px; }
+.faults .row {
+  display: grid;
+  grid-template-columns: 470px 1px 1fr;
+  gap: 44px;
+  align-items: baseline;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--border-dark);
+}
+.faults .row.head { padding-top: 0; }
+.faults .row.head span { font: 400 var(--t-label)/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-cream-3); }
+.faults .row .divider { align-self: stretch; background: var(--border-dark); }
+.faults .fault { font: 600 34px/1.2 var(--f-display); letter-spacing: -0.01em; }
+.faults .out { font: 400 26px/1.45 var(--f-body); color: var(--ink-cream-2); }
+.faults .out b { font: 500 21px/1 var(--f-mono); letter-spacing: 0.04em; color: var(--ink-cream); }
+
+/* ===========================================
+   SLIDE 6 — STATS (three divided cells)
+   =========================================== */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 72px; }
+.stat { padding: 30px 60px 30px 0; border-right: 1px solid var(--border-dark); margin-right: 60px; }
+.stat:last-child { border-right: 0; margin-right: 0; }
+.stat .v { font: 800 var(--t-stat)/1 var(--f-display); letter-spacing: -0.025em; }
+.stat .v .of { color: var(--ink-cream-3); }
+.stat .l { font: 400 27px/1.45 var(--f-body); color: var(--ink-cream-2); margin-top: 22px; max-width: 470px; }
+
+/* ===========================================
+   SLIDE 7 — RE-AUTH + INTERVENTIONS CHART
+   =========================================== */
+.reauth { display: grid; grid-template-columns: 1fr 760px; gap: 110px; align-items: center; }
+.reauth .h2 { margin: 28px 0 44px; }
+.chart .mono { font-size: var(--t-label); color: var(--ink-cream-3); }
+.bars {
+  height: 420px;
+  display: flex;
+  align-items: flex-end;
+  gap: 26px;
+  margin-top: 30px;
+  border-bottom: 1px solid var(--border-dark);
+}
+.bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bar .fill { background: var(--ink-cream-3); }
+.bar.accent .fill { background: var(--accent); }
+.bar .v { font: 400 18px/1 var(--f-mono); color: var(--ink-cream-3); text-align: center; margin-bottom: 10px; }
+.bar.accent .v { color: var(--accent); }
+.xlabels { display: flex; gap: 26px; margin-top: 12px; }
+.xlabels span { flex: 1; text-align: center; font: 400 15px/1 var(--f-mono); letter-spacing: 0.06em; color: var(--ink-cream-3); text-transform: uppercase; }
+.chart .caption { margin-top: 26px; }
+
+/* ===========================================
+   SLIDE 8 — DASHBOARD SCREENSHOT
+   Strict rectangle, 1px hairline, no radius, no shadow.
+   =========================================== */
+.dash-grid { display: grid; grid-template-columns: 560px 1fr; gap: 80px; align-items: center; }
+.dash-grid .h2 { margin: 28px 0 40px; font-size: 76px; }
+.shot {
+  border: 1px solid var(--border-dark);
+  aspect-ratio: 1440 / 812;
+  overflow: hidden;
+  background: #0e1116;
+}
+.shot img { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: top left; display: block; }
+.shot-cap { margin-top: 14px; }
+
+/* ===========================================
+   SLIDE 9 — CLOSE (chromeless: quote + run card)
+   =========================================== */
+.close .frame { justify-content: center; }
+.close-grid { display: grid; grid-template-columns: 1fr 600px; gap: 100px; align-items: center; }
+.qmark { font: 800 154px/0.6 var(--f-display); color: var(--accent); height: 70px; }
+.quote { font: 600 var(--t-quote)/1.16 var(--f-display); letter-spacing: -0.02em; margin-top: 34px; }
+.quote span { color: var(--ink-cream-2); }
+.attr { margin-top: 44px; font: 400 var(--t-label)/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-cream-3); }
+.cmd { font: 400 23px/1.9 var(--f-mono); color: var(--ink-dark); }
+.cmd span { color: var(--ink-dark-3); }
+.close .info-card .urls { margin-top: 20px; font: 400 20px/1.7 var(--f-body); color: var(--ink-dark-2); }
+
+/* ===========================================
+   PRESENTATION CHROME (outside the slide design system)
+   Nav dots + counter; hidden during automated export.
+   =========================================== */
+.deck-controls { display: flex; gap: 10px; }
+.deck-controls button {
+  width: 7px; height: 7px; border-radius: 50%; border: 0; padding: 0;
+  background: rgba(255, 255, 255, 0.22); cursor: pointer;
+}
+.deck-controls button.on { background: rgba(255, 255, 255, 0.7); }
+.counter {
+  position: fixed; right: 26px; bottom: 18px; z-index: 1000;
+  font: 400 12px/1 var(--f-mono); letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.3);
+}
+html.export .deck-controls, html.export .counter, html.export .edit-hotzone, html.export .edit-toggle { display: none !important; }
+
+/* === INLINE EDITING (press E or hover top-left) === */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle {
+  position: fixed; top: 18px; left: 18px; z-index: 10001;
+  font: 400 12px/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 10px 14px; border: 1px solid rgba(240,232,210,0.3); background: #232E26; color: #F0E8D2;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer;
+}
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+.editing [data-editable] { outline: 1px dashed rgba(192, 112, 48, 0.6); outline-offset: 4px; }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+  <!-- ============ 1 · COVER ============ -->
+  <section class="slide dark cover active visible" aria-label="Cover">
+    <div class="frame">
+      <div class="kicker reveal" data-editable>PS-9 · Palm Era</div>
+      <div>
+        <h1 class="display reveal" style="--d:.08s" data-editable>Q-REX</h1>
+        <p class="tag reveal" style="--d:.2s" data-editable>Quick-commerce data that keeps working <span>when sessions expire, OTPs arrive and formats change.</span></p>
+      </div>
+      <div class="cover-row reveal" style="--d:.32s">
+        <span class="mono caption" data-editable>Blinkit · Swiggy Instamart</span>
+        <span class="mono caption" data-editable>Autonomous retrieval &amp; reliability platform</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2 · PROBLEM ============ -->
+  <section class="slide dark" aria-label="The problem">
+    <div class="frame">
+      <div class="chrome"><span>01 — The problem</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="problem">
+          <div>
+            <div class="kicker reveal">Why brands are flying blind</div>
+            <h2 class="h2 reveal" style="--d:.08s" data-editable>Brands can’t reliably see their own orders, stock and sales.</h2>
+            <p class="lead reveal" style="--d:.16s" data-editable>Seller APIs are thin, so teams rely on browser bots that break on:</p>
+            <ul class="dash reveal" style="--d:.24s">
+              <li data-editable>Session expiry</li>
+              <li data-editable>OTP prompts</li>
+              <li data-editable>Silent format changes</li>
+            </ul>
+          </div>
+          <div class="info-card reveal" style="--d:.34s">
+            <div class="kicker">What we refuse to do</div>
+            <h3 class="h3" data-editable>Scrape with a copied token.</h3>
+            <p data-editable>Internal endpoints are undocumented and change without notice, tokens expire, and bot traffic can get a seller’s account flagged. It is the fragile workflow Palm Era wants gone.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>Reliability within terms of service</span><span>02 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · APPROACH (cream tonal break) ============ -->
+  <section class="slide light" aria-label="Our approach">
+    <div class="frame">
+      <div class="chrome"><span>02 — Our approach</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="kicker reveal">A compliant front door</div>
+        <h2 class="h2 reveal" style="--d:.08s" data-editable>Compliant by construction.</h2>
+        <div class="ladder reveal" style="--d:.18s">
+          <div class="rung first"><div class="n">1</div><h3 class="h3" data-editable>Official API</h3><p data-editable>First choice wherever a platform offers one.</p></div>
+          <div class="rung"><div class="n">2</div><h3 class="h3" data-editable>Portal export</h3><p data-editable>The seller’s own reports, with logged consent.</p></div>
+          <div class="rung"><div class="n">3</div><h3 class="h3" data-editable>Report email</h3><p data-editable>Scheduled reports, parsed. No session to keep alive.</p></div>
+          <div class="rung"><div class="n">4</div><h3 class="h3" data-editable>Manual upload</h3><p data-editable>The last resort, through the same checks.</p></div>
+        </div>
+        <div class="principles reveal" style="--d:.3s">
+          <div data-editable>First rung that works wins</div>
+          <div data-editable>Every record keeps its source</div>
+          <div data-editable>OTP is always typed by a human</div>
+        </div>
+      </div>
+      <div class="foot"><span>Source-path ladder</span><span>03 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 4 · PIPELINE ============ -->
+  <section class="slide dark" aria-label="The pipeline">
+    <div class="frame">
+      <div class="chrome"><span>03 — The pipeline</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="kicker reveal">Seven stages, one path</div>
+        <h2 class="h2 reveal" style="--d:.08s" data-editable>Bad data never reaches the dashboard.</h2>
+        <div class="stages reveal" style="--d:.18s">
+          <div class="stage"><div class="n">01</div><h3 class="h3">Authenticate</h3><p>Encrypted sessions, expiry probe</p></div>
+          <div class="stage"><div class="n">02</div><h3 class="h3">Retrieve</h3><p>Walks the source ladder</p></div>
+          <div class="stage"><div class="n">03</div><h3 class="h3">Validate</h3><p>Drift, partial and contract checks</p></div>
+          <div class="stage"><div class="n">04</div><h3 class="h3">Transform</h3><p>One SKU across platforms</p></div>
+          <div class="stage"><div class="n">05</div><h3 class="h3">Store</h3><p>Raw → staging → clean, idempotent</p></div>
+          <div class="stage"><div class="n">06</div><h3 class="h3">Monitor</h3><p>Freshness SLA, stock, alerts</p></div>
+          <div class="stage"><div class="n">07</div><h3 class="h3">Dashboard</h3><p>Live updates over SSE</p></div>
+        </div>
+        <p class="lead stack reveal" style="--d:.3s" data-editable>A failed check quarantines the pull. <em>The clean layer is never touched.</em></p>
+      </div>
+      <div class="foot"><span>FastAPI · Celery + Redis · PostgreSQL · Next.js · Docker Compose</span><span>04 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 5 · FAULT → OUTCOME ============ -->
+  <section class="slide dark" aria-label="Proven live">
+    <div class="frame">
+      <div class="chrome"><span>04 — Proven live</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="kicker reveal">Chaos panel on stage</div>
+        <h2 class="h2 reveal" style="--d:.08s" data-editable>We break it live. It recovers.</h2>
+        <div class="faults reveal" style="--d:.18s">
+          <div class="row head"><span>Fault injected</span><span></span><span>Handled outcome</span></div>
+          <div class="row"><div class="fault">Column renamed</div><div class="divider"></div><div class="out"><b>SCHEMA_DRIFT</b> alert · pull quarantined · clean data untouched</div></div>
+          <div class="row"><div class="fault">HTTP 500, timeout, 429</div><div class="divider"></div><div class="out">Retries with backoff and jitter · recovers on its own</div></div>
+          <div class="row"><div class="fault">Truncated file</div><div class="divider"></div><div class="out"><b>PARTIAL_PULL</b> · quarantined · re-pulled cleanly</div></div>
+          <div class="row"><div class="fault">Session expired</div><div class="divider"></div><div class="out">Paused, seller alerted · OTP re-auth · gap backfilled</div></div>
+          <div class="row"><div class="fault">SKU runs low</div><div class="divider"></div><div class="out"><b>LOW_STOCK</b> / <b>STOCK_OUT</b> per dark store</div></div>
+        </div>
+      </div>
+      <div class="foot"><span>All faults injected through a mock seller portal — no live account touched</span><span>05 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 6 · RESULTS ============ -->
+  <section class="slide dark" aria-label="Results">
+    <div class="frame">
+      <div class="chrome"><span>05 — Results</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="kicker reveal">Measured, not claimed</div>
+        <h2 class="h2 reveal" style="--d:.08s" data-editable>Verified from a cold start.</h2>
+        <div class="stats">
+          <div class="stat reveal" style="--d:.2s"><div class="v">6<span class="of">/6</span></div><div class="l" data-editable>chaos scenarios handled end to end, scripted and repeatable</div></div>
+          <div class="stat reveal" style="--d:.3s"><div class="v">0</div><div class="l" data-editable>duplicate rows in the clean layer, however often a sync re-runs</div></div>
+          <div class="stat reveal" style="--d:.4s"><div class="v">179<span class="of">/179</span></div><div class="l" data-editable>order lines recovered after a session expiry, checked against the source</div></div>
+        </div>
+      </div>
+      <div class="foot"><span>docker compose up → seed → scripted demo · plus 12 automated tests</span><span>06 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 7 · OTP RE-AUTH + INTERVENTIONS ============ -->
+  <section class="slide dark" aria-label="OTP handled, not bypassed">
+    <div class="frame">
+      <div class="chrome"><span>06 — OTP, handled not bypassed</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="reauth">
+          <div>
+            <div class="kicker reveal">Human in the loop, rarely</div>
+            <h2 class="h2 reveal" style="--d:.08s" data-editable>One tap, one code, back in sync.</h2>
+            <ul class="dash small reveal" style="--d:.18s">
+              <li data-editable>Expiry caught before the next sync</li>
+              <li data-editable>Seller gets a one-tap re-auth link</li>
+              <li data-editable>They type the OTP from their phone</li>
+              <li data-editable>Q-REX resumes and backfills the gap</li>
+            </ul>
+          </div>
+          <div class="chart reveal" style="--d:.28s">
+            <div class="mono">Manual interventions per week</div>
+            <!-- bar heights = count / 9 (max) -->
+            <div class="bars">
+              <div class="bar"><div class="v">8</div><div class="fill" style="height:88.9%"></div></div>
+              <div class="bar"><div class="v">9</div><div class="fill" style="height:100%"></div></div>
+              <div class="bar"><div class="v">8</div><div class="fill" style="height:88.9%"></div></div>
+              <div class="bar"><div class="v">6</div><div class="fill" style="height:66.7%"></div></div>
+              <div class="bar"><div class="v">4</div><div class="fill" style="height:44.4%"></div></div>
+              <div class="bar"><div class="v">3</div><div class="fill" style="height:33.3%"></div></div>
+              <div class="bar"><div class="v">2</div><div class="fill" style="height:22.2%"></div></div>
+              <div class="bar accent"><div class="v">1</div><div class="fill" style="height:11.1%"></div></div>
+            </div>
+            <div class="xlabels"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>Now</span></div>
+            <p class="caption" data-editable>Weeks 1–7 are a seeded baseline standing in for the manual workflow; “Now” is the live demo’s single re-auth.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>No code path ever supplies an OTP</span><span>07 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 8 · DASHBOARD ============ -->
+  <section class="slide dark" aria-label="The dashboard">
+    <div class="frame">
+      <div class="chrome"><span>07 — One view</span><span>Q-REX</span></div>
+      <div class="body">
+        <div class="dash-grid">
+          <div>
+            <div class="kicker reveal">The brand’s side</div>
+            <h2 class="h2 reveal" style="--d:.08s" data-editable>Every platform, one honest dashboard.</h2>
+            <ul class="dash small reveal" style="--d:.18s">
+              <li data-editable>Freshness per source and dataset</li>
+              <li data-editable>One SKU across both platforms</li>
+              <li data-editable>Stock alerts per dark store</li>
+              <li data-editable>Stale data is marked, never hidden</li>
+            </ul>
+          </div>
+          <div class="reveal" style="--d:.26s">
+            <div class="shot"><img src="assets/dashboard-overview.png" alt="Q-REX dashboard overview: freshness tiles for Blinkit and Instamart, open alerts, duplicate rows, gap recovered, interventions and sales charts"></div>
+            <p class="caption shot-cap" data-editable>Live screenshot · Q-REX overview running in Docker Compose</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>Next.js · live over server-sent events</span><span>08 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 9 · CLOSE ============ -->
+  <section class="slide dark close" aria-label="Close">
+    <div class="frame">
+      <div class="close-grid">
+        <div>
+          <div class="qmark reveal">“</div>
+          <p class="quote reveal" style="--d:.1s" data-editable>Pull data only through permitted paths. Handle the OTP, don’t defeat it. <span>Survive every failure, live.</span></p>
+          <div class="attr reveal" style="--d:.2s" data-editable>Q-REX · PS-9 · Palm Era</div>
+        </div>
+        <div class="info-card reveal" style="--d:.3s">
+          <div class="kicker">Run it yourself</div>
+          <div class="cmd">
+            <div>docker compose up --build</div>
+            <div><span>…exec api</span> python -m scripts.seed</div>
+            <div><span>…exec api</span> python -m scripts.demo</div>
+          </div>
+          <p class="urls" data-editable>Dashboard :3000 · Chaos :9000 · Alerts :8025</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- presentation chrome (outside the stage) -->
+<nav class="deck-controls" id="dots" aria-label="Slides"></nav>
+<div class="counter" id="counter">01 / 09</div>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Fixed 1920×1080 stage scaled with one transform; instant slide
+   switching (Mat); reveal animations replay on each visit.
+   =========================================== */
+if (navigator.webdriver) document.documentElement.classList.add('export');
+
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.stage = document.getElementById('deckStage');
+    this.dots = document.getElementById('dots');
+    this.counter = document.getElementById('counter');
+    this.current = 0;
+    this.lastWheel = 0;
+    this.buildDots();
+    this.setupStageScale();
+    this.setupNav();
+    const fromHash = parseInt(location.hash.slice(1), 10);
+    this.goToSlide(Number.isFinite(fromHash) ? fromHash - 1 : 0);
+  }
+
+  buildDots() {
+    this.slides.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.setAttribute('aria-label', `Slide ${i + 1}`);
+      b.addEventListener('click', () => this.goToSlide(i));
+      this.dots.appendChild(b);
+    });
+  }
+
+  setupStageScale() {
+    const scale = () => {
+      const f = Math.min(innerWidth / 1920, innerHeight / 1080);
+      const x = (innerWidth - 1920 * f) / 2;
+      const y = (innerHeight - 1080 * f) / 2;
+      this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+    };
+    scale();
+    addEventListener('resize', scale);
+  }
+
+  setupNav() {
+    document.addEventListener('keydown', (e) => {
+      if (e.target.isContentEditable) return;
+      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); this.goToSlide(this.current + 1); }
+      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.goToSlide(this.current - 1); }
+      if (e.key === 'Home') this.goToSlide(0);
+      if (e.key === 'End') this.goToSlide(this.slides.length - 1);
+    });
+    let x0 = null;
+    addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 50) this.goToSlide(this.current + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+    addEventListener('wheel', (e) => {
+      const now = Date.now();
+      if (now - this.lastWheel < 1000 || Math.abs(e.deltaY) < 20) return;
+      this.lastWheel = now;
+      this.goToSlide(this.current + (e.deltaY > 0 ? 1 : -1));
+    }, { passive: true });
+  }
+
+  goToSlide(i) {
+    this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+    this.slides.forEach((s, k) => {
+      const on = k === this.current;
+      s.classList.toggle('active', on);
+      // re-trigger reveals: drop .visible, force reflow, add it back
+      s.classList.remove('visible');
+      if (on) { void s.offsetWidth; s.classList.add('visible'); }
+    });
+    Array.from(this.dots.children).forEach((d, k) => d.classList.toggle('on', k === this.current));
+    const pad = (n) => String(n).padStart(2, '0');
+    this.counter.textContent = `${pad(this.current + 1)} / ${pad(this.slides.length)}`;
+    history.replaceState(null, '', `#${this.current + 1}`);
+  }
+}
+window.presentation = new SlidePresentation();
+
+/* ===========================================
+   INLINE EDITING — press E (or hover top-left) to toggle;
+   edits autosave to localStorage; Ctrl/Cmd+S downloads the edited HTML.
+   =========================================== */
+const editor = {
+  isActive: false,
+  key: 'qrex-deck-edits',
+  toggleEditMode() {
+    this.isActive = !this.isActive;
+    document.body.classList.toggle('editing', this.isActive);
+    document.getElementById('editToggle').classList.toggle('active', this.isActive);
+    document.querySelectorAll('[data-editable]').forEach((el) => { el.contentEditable = this.isActive; });
+    if (!this.isActive) this.save();
+  },
+  save() {
+    const data = Array.from(document.querySelectorAll('[data-editable]')).map((el) => el.innerHTML);
+    try { localStorage.setItem(this.key, JSON.stringify(data)); } catch (e) {}
+  },
+  restore() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(this.key) || 'null'); } catch (e) {}
+    if (!Array.isArray(data)) return;
+    const els = document.querySelectorAll('[data-editable]');
+    if (data.length === els.length) els.forEach((el, i) => { el.innerHTML = data[i]; });
+  },
+  download() {
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+    clone.querySelector('body').classList.remove('editing');
+    const blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'qrex-deck.html';
+    a.click();
+  },
+};
+if (!navigator.webdriver) editor.restore();
+document.addEventListener('input', () => editor.isActive && editor.save());
+
+const toggle = document.getElementById('editToggle');
+const hotzone = document.querySelector('.edit-hotzone');
+let hideT = null;
+toggle.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('mouseenter', () => { clearTimeout(hideT); toggle.classList.add('show'); });
+hotzone.addEventListener('mouseleave', () => { hideT = setTimeout(() => { if (!editor.isActive) toggle.classList.remove('show'); }, 400); });
+toggle.addEventListener('mouseenter', () => clearTimeout(hideT));
+toggle.addEventListener('mouseleave', () => { hideT = setTimeout(() => { if (!editor.isActive) toggle.classList.remove('show'); }, 400); });
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'e' || e.key === 'E') && !e.target.isContentEditable) editor.toggleEditMode();
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); editor.save(); editor.download(); }
+});
+</script>
+</body>
+</html>
